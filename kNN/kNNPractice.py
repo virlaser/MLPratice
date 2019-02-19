@@ -46,7 +46,7 @@ class KNNClassifier:
 
         return votes.most_common(1)[0][0]
 
-    def accuracy_score(y_true, y_predict):
+    def accuracy_score(self, y_true, y_predict):
         """计算y_true和y_predict之间的准确率"""
         assert len(y_true) == len(y_predict), \
             "the size of y_true must be equal to the size of y_predict"
