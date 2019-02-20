@@ -1,8 +1,7 @@
 # coding : utf-8
 
 from nltk import FreqDist
-import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
 
 
@@ -74,9 +73,29 @@ if __name__ == '__main__':
     # 恢复从 5000 开始的数据
     y = [0]*50 + label
     # 2,8 切分数据集
+
+    param_grid = [
+        # 第一组搜索参数
+        {
+            'weights': ['uniform'],
+            'n_neighbors': [i for i in range(1, 11)]
+        },
+        # 第二周搜索参数
+        {
+            'weights': ['distance'],
+            'n_neighbors': [i for i in range(1, 11)],
+            'p': [i for i in range(1, 6)]
+        }
+    ]
+    # 数据划分
     x_train, x_test, y_train, y_test = train_test_split(command_feature, y, test_size=0.2)
-    knn_clf = KNeighborsClassifier(n_neighbors=3)
-    knn_clf.fit(x_train, y_train)
+    knn_clf = KNeighborsClassifier()
+    # 网格搜索
+    grid_search = GridSearchCV(knn_clf, param_grid, n_jobs=-1, verbose=1)
+    grid_search.fit(x_train, y_train)
+    print(grid_search.best_estimator_)
+    # 最佳 kNN
+    knn_clf = grid_search.best_estimator_
     score = knn_clf.score(x_test, y_test)
     print(score)
 
