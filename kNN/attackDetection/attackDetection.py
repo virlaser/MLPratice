@@ -64,10 +64,11 @@ def get_lable(filename, index):
 
 
 if __name__ == '__main__':
-    # 获取用户输入命令序列和所有出现过的命令
+    # 获取用户输入命令序列以及去重后的命令
     command_lists, fdist = load_user_command("./data/User3")
+    # 对用户输入命令进行特征化
     command_feature = get_command_feature(command_lists, fdist)
-
+    # 获取用户输入标签
     label = get_lable("./data/label", 2)
     # 恢复从 5000 开始的数据
     y = [0]*50 + label
