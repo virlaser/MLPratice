@@ -2,6 +2,7 @@
 
 from nltk import FreqDist
 import numpy as np
+from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
 
@@ -72,17 +73,10 @@ if __name__ == '__main__':
     label = get_lable("./data/label", 2)
     # 恢复从 5000 开始的数据
     y = [0]*50 + label
-
-    x_train = command_feature[0:100]
-    y_train = y[0:100]
-
-    x_test = command_feature[100:150]
-    y_test = y[100:150]
-
+    # 2,8 切分数据集
+    x_train, x_test, y_train, y_test = train_test_split(command_feature, y, test_size=0.2)
     knn_clf = KNeighborsClassifier(n_neighbors=3)
     knn_clf.fit(x_train, y_train)
-    y_predict = knn_clf.predict(x_test)
-
-    score = np.mean(y_test == y_predict)
+    score = knn_clf.score(x_test, y_test)
     print(score)
 
