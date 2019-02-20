@@ -1,8 +1,13 @@
 # coding : utf-8
+import os
+import random
 
 from nltk import FreqDist
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
+
+LABEL_PATH = "./data/label"
+DST_PATH = './data/'
 
 
 def load_user_command(filename):
@@ -63,24 +68,28 @@ def get_lable(filename, index):
     return x
 
 
-if __name__ == '__main__':
+def pre(index, path=LABEL_PATH):
+    file_name = DST_PATH + "User" + str(index)
     # 获取用户输入命令序列以及去重后的命令
-    command_lists, fdist = load_user_command("./data/User3")
+    command_lists, fdist = load_user_command(file_name)
     # 对用户输入命令进行特征化
     command_feature = get_command_feature(command_lists, fdist)
     # 获取用户输入标签
-    label = get_lable("./data/label", 2)
-    # 恢复从 5000 开始的数据
-    y = [0]*50 + label
-    # 2,8 切分数据集
+    label = get_lable(path, index-1)
+    return command_feature, label
 
+
+def train(index):
+    command_feature, label = pre(index)
+    # 恢复从 5000 开始的数据
+    y = [0] * 50 + label
     param_grid = [
         # 第一组搜索参数
         {
             'weights': ['uniform'],
             'n_neighbors': [i for i in range(1, 11)]
         },
-        # 第二周搜索参数
+        # 第二组搜索参数
         {
             'weights': ['distance'],
             'n_neighbors': [i for i in range(1, 11)],
@@ -97,5 +106,23 @@ if __name__ == '__main__':
     # 最佳 kNN
     knn_clf = grid_search.best_estimator_
     score = knn_clf.score(x_test, y_test)
-    print(score)
+    print("find best estimator score: " + str(score))
+    return knn_clf
+
+
+def test(knn_clf, path=DST_PATH):
+    num = len(os.listdir(path))
+    for i in range(1, num):
+        command_feature, label = pre(i)
+        y = [0] * 50 + label
+        x_train, x_test, y_train, y_test = train_test_split(command_feature, y, test_size=0.2)
+        knn_clf.fit(x_train, y_train)
+        # 每个用户的操作特征个数不一样
+        print(knn_clf.score(command_feature, y))
+
+
+if __name__ == '__main__':
+    _index = random.randint(1, 50)
+    best_knn_clf = train(_index)
+    test(best_knn_clf)
 
