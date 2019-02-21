@@ -68,18 +68,28 @@ def get_lable(filename, index):
     return x
 
 
-def pre(index, path=LABEL_PATH):
+def pre(index):
+    """
+    预操作，加载特征化的命令与标签
+    :param index: 当前处理用户的编号
+    :return: (特征化的命令，标签)
+    """
     file_name = DST_PATH + "User" + str(index)
     # 获取用户输入命令序列以及去重后的命令
     command_lists, fdist = load_user_command(file_name)
     # 对用户输入命令进行特征化
     command_feature = get_command_feature(command_lists, fdist)
     # 获取用户输入标签
-    label = get_lable(path, index-1)
+    label = get_lable(LABEL_PATH, index-1)
     return command_feature, label
 
 
 def train(index):
+    """
+    使用网格搜索获取最好额参数
+    :param index: 随机生成的数字，随机选取一个用户的数据进行网格搜索
+    :return: 最佳参数的分类器
+    """
     command_feature, label = pre(index)
     # 恢复从 5000 开始的数据
     y = [0] * 50 + label
@@ -110,8 +120,13 @@ def train(index):
     return knn_clf
 
 
-def test(knn_clf, path=DST_PATH):
-    num = len(os.listdir(path))
+def test(knn_clf):
+    """
+    使用最佳的分类器对所有用户进行预测
+    :param knn_clf: 最佳分类器
+    :return: none
+    """
+    num = len(os.listdir(DST_PATH))
     for i in range(1, num):
         command_feature, label = pre(i)
         y = [0] * 50 + label
