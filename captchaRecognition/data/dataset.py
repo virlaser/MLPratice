@@ -4,10 +4,10 @@ from PIL import Image
 import numpy as np
 import os
 
-from captchaRecognition.config import DefaultConfig
+from config import DefaultConfig
 
 
-class dataset(Dataset):
+class CaptchaLoader(Dataset):
 
     def __init__(self, root_dir, label_file, transform=None):
         self.root_dir = root_dir
@@ -26,7 +26,7 @@ class dataset(Dataset):
         return (self.label.shape[0])
 
 
-data = dataset(DefaultConfig.file_path + 'src', DefaultConfig.file_path + 'label.txt', transform=transforms.ToTensor())
+data = CaptchaLoader(DefaultConfig.file_path + 'src', DefaultConfig.file_path + 'label.txt', transform=transforms.ToTensor())
 
 data_loader = DataLoader(data,
                          batch_size=DefaultConfig.BATCH_SIZE,
