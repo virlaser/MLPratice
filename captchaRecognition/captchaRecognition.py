@@ -5,41 +5,11 @@ from torch.autograd import Variable
 import copy
 import time
 
-
-class ConvNet(nn.Module):
-
-    def __init__(self):
-        super(ConvNet, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=4, stride=1, padding=2),  # in:(bs,3,60,160)
-            nn.BatchNorm2d(32),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.MaxPool2d(kernel_size=2),  # out:(bs,32,30,80)
-
-            nn.Conv2d(32, 64, kernel_size=4, stride=1, padding=2),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.MaxPool2d(kernel_size=2),  # out:(bs,64,15,40)
-
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.MaxPool2d(kernel_size=2)  # out:(bs,64,7,20)
-        )
-
-        self.fc1 = nn.Linear(64 * 7 * 20, 500)
-        self.fc2 = nn.Linear(500, 40)
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = x.view(x.size(0), -1)  # reshape to (batch_size, 64 * 7 * 30)
-        output = self.fc1(x)
-        output = self.fc2(output)
-
-        return output
+from models import ConvNet
+from config import DefaultConfig
+from data.dataset import data_loader, data, dataset_size
 
 
-# Train the net
 class nCrossEntropyLoss(torch.nn.Module):
 
     def __init__(self, n=4):
@@ -54,8 +24,7 @@ class nCrossEntropyLoss(torch.nn.Module):
         label_t = label[:, 0]
 
         for i in range(1, self.n):
-            output_t = torch.cat((output_t, output[:, 10 * i:10 * i + 10]),
-                                 0)  # 损失的思路是将一张图平均剪切为4张小图即4个多分类，然后再用多分类交叉熵方损失
+            output_t = torch.cat((output_t, output[:, 10 * i:10 * i + 10]), 0)  # 损失的思路是将一张图平均剪切为4张小图即4个多分类，然后再用多分类交叉熵方损失
             label_t = torch.cat((label_t, label[:, i]), 0)
             self.total_loss = self.loss(output_t, label_t)
 
@@ -73,21 +42,20 @@ def equal(np1, np2):
 
 net = ConvNet()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
-# loss_func = nn.CrossEntropyLoss()
 loss_func = nCrossEntropyLoss()
 
 best_model_wts = copy.deepcopy(net.state_dict())
 best_acc = 0.0
 
 since = time.time()
-for epoch in range(EPOCH):
+for epoch in range(DefaultConfig.EPOCH):
 
     running_loss = 0.0
     running_corrects = 0
 
-    for step, (inputs, label) in enumerate(dataloader):
+    for step, (inputs, label) in enumerate(data_loader):
 
-        pred = torch.LongTensor(BATCH_SIZE, 1).zero_()
+        pred = torch.LongTensor(DefaultConfig.BATCH_SIZE, 1).zero_()
         inputs = Variable(inputs)  # (bs, 3, 60, 240)
         label = Variable(label)  # (bs, 4)
 
@@ -103,7 +71,7 @@ for epoch in range(EPOCH):
         loss.backward()
         optimizer.step()
 
-        running_loss += loss.data[0] * inputs.size()[0]
+        running_loss += loss.data * inputs.shape[0]
         running_corrects += equal(pred.numpy()[:, 1:], label.data.cpu().numpy().astype(int))
 
     epoch_loss = running_loss / dataset_size
@@ -113,8 +81,8 @@ for epoch in range(EPOCH):
         best_acc = epoch_acc
         best_model_wts = copy.deepcopy(net.state_dict())
 
-    if epoch == EPOCH - 1:
-        torch.save(best_model_wts, file_path + '/best_model_wts.pkl')
+    if epoch == DefaultConfig.EPOCH - 1:
+        torch.save(best_model_wts, DefaultConfig.file_path + '../checkpoint/best_model_wts.pkl')
 
     print()
 
