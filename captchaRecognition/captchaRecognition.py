@@ -2,47 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from PIL import Image
-import numpy as np
-import os
 import copy
 import time
 
-file_path = './data/'
-BATCH_SIZE = 16
-EPOCH = 10
 
-
-# Load data
-class dataset(Dataset):
-
-    def __init__(self, root_dir, label_file, transform=None):
-        self.root_dir = root_dir
-        self.label = np.loadtxt(label_file)
-        self.transform = transform
-
-    def __getitem__(self, idx):
-        img_name = os.path.join(self.root_dir, '{0:0>4}'.format(idx) + 'jpg')
-        image = Image.open(img_name)
-        labels = self.label[idx, :]
-        if self.transform:
-            image = self.transform(image)
-        return image, labels
-
-    def __len__(self):
-        return (self.label.shape[0])
-
-
-data = dataset(file_path + 'src', file_path + 'label.txt', transform=transforms.ToTensor())
-
-dataloader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, drop_last=True)
-
-dataset_size = len(data)
-
-
-# Conv network
 class ConvNet(nn.Module):
 
     def __init__(self):
@@ -87,7 +50,7 @@ class nCrossEntropyLoss(torch.nn.Module):
 
     def forward(self, output, label):
         output_t = output[:, 0:10]
-        label = Variable(torch.LongTensor(label.data.cpu().numpy())).cuda()
+        label = Variable(torch.LongTensor(label.data.cpu().numpy()))
         label_t = label[:, 0]
 
         for i in range(1, self.n):
@@ -108,7 +71,7 @@ def equal(np1, np2):
     return n
 
 
-net = ConvNet().cuda()
+net = ConvNet()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
 # loss_func = nn.CrossEntropyLoss()
 loss_func = nCrossEntropyLoss()
@@ -125,8 +88,8 @@ for epoch in range(EPOCH):
     for step, (inputs, label) in enumerate(dataloader):
 
         pred = torch.LongTensor(BATCH_SIZE, 1).zero_()
-        inputs = Variable(inputs).cuda()  # (bs, 3, 60, 240)
-        label = Variable(label).cuda()  # (bs, 4)
+        inputs = Variable(inputs)  # (bs, 3, 60, 240)
+        label = Variable(label)  # (bs, 4)
 
         optimizer.zero_grad()
 
